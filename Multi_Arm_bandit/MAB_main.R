@@ -1,7 +1,6 @@
-set.seed(100)
+require(sqldf) || install.packages("sqldf",dependencies=T); require(sqldf)
 
-setwd("Y:/MAB/Phase2Test/Checking/NonReTargeting")
-rawd_all_unpooled <- read.csv( "Y:/MAB/Phase2Test/Checking/0RawData/Generated/Chk_Combine_Upto_20141109.csv",header=T, stringsAsFactors=FALSE)
+rawd_all_unpooled <- read.csv( "MAB_data.csv",header=T, stringsAsFactors=FALSE)
 
 
 # remove . from column names
@@ -9,7 +8,7 @@ cnames <- colnames(rawd_all_unpooled)
 colnames(rawd_all_unpooled) <- gsub('[.]','',cnames)
 # group rows
 
-require(sqldf) || install.packages("sqldf",dependencies=T); require(sqldf)
+
 
 rawd.all <- sqldf('select
                   Campaign
@@ -20,10 +19,10 @@ rawd.all <- sqldf('select
                   ,sum(Impressions) as Impressions
                   ,sum(Clicks) as Clicks
                   ,Clicks/Impressions as ClickRate
-                  ,sum(EOAccountsFloodlightNewCustomerEOAccountsOpenedClickthroughConversions) as EOClickConversion
-                  ,sum(EOAccountsFloodlightNewCustomerEOAccountsOpenedViewthroughConversions)  as EOViewConversion
-                  ,sum(MobileFloodlightMobileEOAccountOpenedClickthroughConversions) as MobileClickConversion        
-                  ,sum(MobileFloodlightMobileEOAccountOpenedViewthroughConversions)  as MobileViewConversion
+                  ,sum(Var1) as Var1
+                  ,sum(Var2)  as Var2
+                  ,sum(Var3) as Var3       
+                  ,sum(Var4)  as Var4
                   from rawd_all_unpooled group by 1,2,3,4,5 ')
 
 
@@ -37,28 +36,6 @@ include.which <- (1:nrow(rawd.all) %in% CT.which) &
 
 rawd <- rawd.all[include.which, ]
 rawd <- droplevels(rawd)
-
-#########special handle ###########
-
-## Take out the placements on Turn.com which is not in our media plan
-
-rm.ind1 =  grep( "Turn", rawd$Site)
-rawd = rawd[-rm.ind1,]
-
-
- change.ind1 = grep("GDN_KCT - AutoPcmt: \"work from home / telecommute\" terms_xx_300x250_xx_dCPM_Test April 2014_xx_noDFAcost_xx" , rawd$Placement)
- rawd[change.ind1,]$Placement = "GDN_KCT - AutoPcmt: \\work from home / telecommute\\ terms_xx_300x250_xx_dCPM_Test April 2014_xx_noDFAcost_xx"
- change.ind2 = grep("GDN_KCT - AutoPcmt: \"work from home / telecommute\" terms_xx_728x90_xx_dCPM_Test April 2014_xx_noDFAcost_xx" , rawd$Placement)
- rawd[change.ind2,]$Placement = "GDN_KCT - AutoPcmt: \\work from home / telecommute\\ terms_xx_728x90_xx_dCPM_Test April 2014_xx_noDFAcost_xx"
- 
- 
- change.ind3 = grep("LinkedIn_ROS - \"Individual Contributors\"_xx_160x600_2per24_CPM_Test July 2014_xx_xx_xx" , rawd$Placement)
- rawd[change.ind3,]$Placement =  "LinkedIn_ROS - \\Individual Contributors\\_xx_160x600_2per24_CPM_Test July 2014_xx_xx_xx";
- change.ind4 = grep("LinkedIn_ROS - \"Individual Contributors\"_xx_300x250_2per24_CPM_Test July 2014_xx_xx_xx" , rawd$Placement)
- rawd[change.ind4,]$Placement = "LinkedIn_ROS - \\Individual Contributors\\_xx_300x250_2per24_CPM_Test July 2014_xx_xx_xx"
-
- rm.ind2 = grep("Comcast_Run of Comcast Xfinity - ATF_xx_160x600_3per24_CPM_xx_Guaranteed_xx_xx",rawd$Placement)
- rawd =rawd[-rm.ind2,]
 ###################################
 
 #############################
@@ -294,6 +271,7 @@ medf.ranef$CIlo <- medf.ranef$mean.ranef - 2*medf.ranef$se.ranef
 medf.ranef$CIhi <- medf.ranef$mean.ranef + 2*medf.ranef$se.ranef
 
 #simulate ranef 
+set.seed(100)
 n.iters # predefined
 dim(d.long) # predefined
 
@@ -354,16 +332,9 @@ for (place in levels(d$placeid) ){
 
 d.long$fixef.linpred.samp <- fixef.linpred.samp
 
-
-# sample linear predictors for whole dataset from whole model
-# test for fixed and random effects separately
-#d.long$linpred.samp <- d.long$ranef.coef.samp
-#d.long$linpred.samp <- d.long$fixef.linpred.samp
-
 d.long$linpred.samp <- d.long$fixef.linpred.samp + d.long$ranef.coef.samp
 
-#p102 <- d.long[d.long$placeid=="p102",c("linpred.samp","concept")]
-#densityplot(~linpred.samp,groups=concept,data=p102,auto.key=T,plot.points=F)
+
 
 d.long$iter <- paste("iter", rep(n.iters*10+ 1:n.iters , nrow(d) ) ,sep="")
 d.long$placeid_iter <- paste(d.long$placeid, d.long$iter, sep="_")
