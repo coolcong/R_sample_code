@@ -1,9 +1,8 @@
 require(sqldf) || install.packages("sqldf",dependencies=T); require(sqldf)
-
-
-
 require(lme4) || install.packages("lme4",dependencies=T); require(lme4)
 require(arm) || install.packages("arm",dependencies=T); require(arm)
+
+#skip the data pre-processing #
 
 
 #glme1 <- lmer(cbind(conversions,impressions-conversions) ~ (1|unitid) + concept + size, family=binomial(link="logit"), data=d)
